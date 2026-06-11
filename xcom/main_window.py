@@ -394,4 +394,5 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.close_port()
+        self.multi_page.save()
         super().closeEvent(event)
