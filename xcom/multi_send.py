@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QWidget, QGridLayout, QHBoxLayout, QVBoxLayout, QCheckBox,
     QLineEdit, QPushButton, QLabel, QSpinBox, QTabWidget,
-    QInputDialog, QMessageBox, QMenu,
+    QInputDialog, QMessageBox, QMenu, QGroupBox,
 )
 
 ENTRIES_PER_PAGE = 10
@@ -190,6 +190,7 @@ class MultiSendPage(QWidget):
         bar.setContextMenuPolicy(Qt.CustomContextMenu)
         bar.customContextMenuRequested.connect(self._tab_context_menu)
 
+        # 控制项做成独立设置组，由主窗口摆到右侧栏，给日志区腾高度
         self.newline_chk = QCheckBox("发送新行")
         self.newline_chk.setChecked(True)
         self.cycle_chk = QCheckBox("循环发送(当前页)")
@@ -199,18 +200,20 @@ class MultiSendPage(QWidget):
         self.period_spin.setValue(1000)
         self.period_spin.setSuffix(" ms")
 
-        bottom = QHBoxLayout()
-        bottom.addWidget(self.newline_chk)
-        bottom.addWidget(self.cycle_chk)
-        bottom.addWidget(QLabel("周期:"))
-        bottom.addWidget(self.period_spin)
-        bottom.addStretch()
+        period_row = QHBoxLayout()
+        period_row.addWidget(QLabel("周期:"))
+        period_row.addWidget(self.period_spin, 1)
+        ctrl = QVBoxLayout()
+        ctrl.addWidget(self.newline_chk)
+        ctrl.addWidget(self.cycle_chk)
+        ctrl.addLayout(period_row)
+        self.controls_box = QGroupBox("多条发送")
+        self.controls_box.setLayout(ctrl)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 2)
         layout.setSpacing(3)
         layout.addWidget(self.tag_tabs)
-        layout.addLayout(bottom)
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._cycle_tick)

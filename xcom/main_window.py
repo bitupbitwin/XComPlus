@@ -157,6 +157,7 @@ class MainWindow(QMainWindow):
         right = QVBoxLayout()
         right.addWidget(settings_box)
         right.addWidget(recv_box)
+        right.addWidget(self.multi_page.controls_box)
         right.addStretch()
 
         # 发送区：压缩高度，让接收日志区占比更大
@@ -211,7 +212,7 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
         splitter.setCollapsible(0, False)
-        splitter.setSizes([400, 220])
+        splitter.setSizes([440, 195])
 
         layout = QHBoxLayout()
         layout.setContentsMargins(10, 10, 10, 6)
