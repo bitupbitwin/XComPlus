@@ -1,9 +1,10 @@
 import sys
 import traceback
-from pathlib import Path
+
+from xcom.paths import app_dir
 
 MIN_PYTHON = (3, 8)
-ERROR_LOG = Path(__file__).resolve().with_name("xcom_error.log")
+ERROR_LOG = app_dir() / "xcom_error.log"
 
 
 def _excepthook(etype, value, tb):

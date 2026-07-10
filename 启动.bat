@@ -9,6 +9,13 @@ if errorlevel 1 (
     python -m pip install -r requirements.txt
 )
 
+REM 优先用 pythonw 无控制台启动（不留黑框）
+where pythonw >nul 2>nul
+if not errorlevel 1 (
+    start "" pythonw run.py
+    exit /b 0
+)
+
 python run.py
 if errorlevel 1 (
     echo.

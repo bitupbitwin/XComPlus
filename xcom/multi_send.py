@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import configparser
 import json
-from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
@@ -14,9 +13,11 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QAbstractItemView,
 )
 
+from .paths import app_dir
+
 ENTRIES_PER_PAGE = 10
 ROWS_PER_COLUMN = 5
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "xcom_multisend.json"
+CONFIG_PATH = app_dir() / "xcom_multisend.json"
 
 
 def _empty_item():

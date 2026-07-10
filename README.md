@@ -30,7 +30,7 @@
 
 需要 Python 3.8+（推荐 3.10+）。
 
-**快捷启动**：Windows 双击 `启动.bat`，Linux/macOS 运行 `./start.sh`（首次会自动安装依赖）。
+**快捷启动**：Windows 双击 `启动.bat`（用 pythonw 启动，无控制台黑框），Linux/macOS 运行 `./start.sh`（首次会自动安装依赖）。
 
 **手动启动**：
 
@@ -38,6 +38,15 @@
 pip install -r requirements.txt
 python run.py
 ```
+
+## 打包成 exe（Windows）
+
+双击 `打包exe.bat`，等待完成后在 `dist\X-COM+.exe` 得到单文件程序——
+双击直接运行、无控制台窗口、自带图标、无需安装 Python，可复制到任意电脑使用。
+
+- 首次打包会自动安装 PyInstaller，耗时几分钟；产物约 60~80MB（内含 Qt 运行库）
+- 打包后 `xcom_multisend.json` / `xcom_error.log` 保存在 exe 所在目录
+- 个别杀毒软件可能对 PyInstaller 单文件误报，添加信任即可
 
 Windows 下若报 `DLL load failed`，安装微软 VC++ Redistributable（vc_redist.x64.exe）。
 程序异常时会弹窗并把完整 traceback 写入 `xcom_error.log`。
