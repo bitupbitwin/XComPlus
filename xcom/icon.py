@@ -1,4 +1,4 @@
-"""应用图标：球拍·信号 —— 毛玻璃底上乒乓球拍，拍面刻串口方波，配朱印落款。
+"""应用图标：球拍·信号 —— 毛玻璃底上乒乓球拍，拍面刻串口方波。
 
 运行时矢量绘制，任意尺寸清晰；小尺寸自动省略细节保证辨识度。
 """
@@ -13,7 +13,6 @@ ORANGE = QColor("#FF9500")
 ORANGE_L = QColor("#FFB04D")
 INK = QColor("#2A1804")      # 深褐墨色
 CREAM = QColor("#FFFDF6")
-SEAL_RED = QColor("#D8331F")  # 印泥朱红
 
 
 def _paint(size: int) -> QPixmap:
@@ -105,21 +104,6 @@ def _paint(size: int) -> QPixmap:
             rr = s * (0.105 + 0.055 * i)
             p.drawArc(QRectF(ball.x() - rr, ball.y() - rr, rr * 2, rr * 2),
                       140 * 16, 85 * 16)
-
-    # 朱印落款（左下角，小尺寸省略）
-    if size >= 32:
-        seal = QRectF(s * 0.135, s * 0.685, s * 0.155, s * 0.155)
-        p.setPen(Qt.NoPen)
-        p.setBrush(SEAL_RED)
-        p.drawRoundedRect(seal, s * 0.03, s * 0.03)
-        pen = QPen(CREAM, max(1.0, s * 0.014), Qt.SolidLine, Qt.FlatCap)
-        p.setPen(pen)
-        cx = seal.center().x()
-        p.drawLine(QPointF(cx, seal.top() + s * 0.018),
-                   QPointF(cx, seal.bottom() - s * 0.018))
-        for dy in (0.42, 0.72):
-            y = seal.top() + seal.height() * dy
-            p.drawLine(QPointF(cx - s * 0.032, y), QPointF(cx + s * 0.032, y))
 
     p.end()
     return pm
