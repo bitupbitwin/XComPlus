@@ -210,6 +210,26 @@ QProgressBar::chunk {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #FFAA33, stop:1 #FF8A00);
 }
 
+QTableWidget {
+    background: rgba(8,10,14,150);
+    border: 1px solid rgba(255,255,255,26);
+    border-radius: 10px;
+    gridline-color: rgba(255,255,255,22);
+    color: #E9E9EE;
+    selection-background-color: rgba(255,149,0,90);
+    selection-color: #FFFFFF;
+}
+QTableWidget::item { padding: 2px 4px; }
+QHeaderView::section {
+    background: rgba(255,255,255,22);
+    color: #D8D8DE;
+    border: none;
+    border-right: 1px solid rgba(255,255,255,20);
+    border-bottom: 1px solid rgba(255,255,255,20);
+    padding: 5px;
+}
+QTableCornerButton::section { background: rgba(255,255,255,22); border: none; }
+
 QStatusBar { background: transparent; color: #9A9AA2; }
 QStatusBar QLabel { color: #9A9AA2; }
 QStatusBar::item { border: none; }

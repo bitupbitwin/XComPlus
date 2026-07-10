@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -9,7 +10,8 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QWidget, QGridLayout, QHBoxLayout, QVBoxLayout, QCheckBox,
     QLineEdit, QPushButton, QLabel, QSpinBox, QTabWidget,
-    QInputDialog, QMessageBox, QMenu, QGroupBox,
+    QInputDialog, QMessageBox, QMenu, QGroupBox, QDialog,
+    QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QAbstractItemView,
 )
 
 ENTRIES_PER_PAGE = 10
@@ -17,8 +19,12 @@ ROWS_PER_COLUMN = 5
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "xcom_multisend.json"
 
 
+def _empty_item():
+    return {"hex": False, "text": "", "desc": ""}
+
+
 def _empty_page():
-    return [{"hex": False, "text": ""} for _ in range(ENTRIES_PER_PAGE)]
+    return [_empty_item() for _ in range(ENTRIES_PER_PAGE)]
 
 
 class TagPage(QWidget):
@@ -81,6 +87,8 @@ class TagPage(QWidget):
         jump_btn = QPushButton("跳转")
         jump_btn.clicked.connect(
             lambda: self.goto_page(self.jump_spin.value() - 1))
+        edit_btn = QPushButton("编辑条目")
+        edit_btn.clicked.connect(self.edit_entries)
 
         page_bar = QHBoxLayout()
         page_bar.addWidget(self.page_label)
@@ -90,6 +98,7 @@ class TagPage(QWidget):
         page_bar.addWidget(self.jump_spin)
         page_bar.addWidget(jump_btn)
         page_bar.addStretch()
+        page_bar.addWidget(edit_btn)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(2, 2, 2, 2)
@@ -105,8 +114,9 @@ class TagPage(QWidget):
         if self._loading:
             return
         chk, edit = self.entries[idx]
-        self.pages[self.current][idx] = {"hex": chk.isChecked(),
-                                         "text": edit.text()}
+        item = self.pages[self.current][idx]  # 原地更新以保留 desc 字段
+        item["hex"] = chk.isChecked()
+        item["text"] = edit.text()
         if save:
             self._on_changed()
 
@@ -160,12 +170,32 @@ class TagPage(QWidget):
             for it in pg[:ENTRIES_PER_PAGE]:
                 it = it if isinstance(it, dict) else {}
                 items.append({"hex": bool(it.get("hex")),
-                              "text": str(it.get("text", ""))})
+                              "text": str(it.get("text", "")),
+                              "desc": str(it.get("desc", ""))})
             while len(items) < ENTRIES_PER_PAGE:
-                items.append({"hex": False, "text": ""})
+                items.append(_empty_item())
             clean.append(items)
         self.pages = clean or [_empty_page()]
         self._show_page(0)
+
+    def all_items(self):
+        """当前标签全部命令（跨页展平）的副本。"""
+        return [dict(it) for pg in self.pages for it in pg]
+
+    def set_all_items(self, items):
+        """用展平列表覆盖当前标签，按每页 10 条重新切分。"""
+        items = [dict(it) for it in items] or [_empty_item()]
+        while len(items) % ENTRIES_PER_PAGE != 0:
+            items.append(_empty_item())
+        self.pages = [items[i:i + ENTRIES_PER_PAGE]
+                      for i in range(0, len(items), ENTRIES_PER_PAGE)]
+        self._show_page(min(self.current, len(self.pages) - 1))
+
+    def edit_entries(self):
+        dlg = EntryEditorDialog(self.all_items(), self)
+        if dlg.exec() == QDialog.Accepted:
+            self.set_all_items(dlg.result_items())
+            self._on_changed()
 
 
 class MultiSendPage(QWidget):
@@ -393,3 +423,120 @@ class MultiSendPage(QWidget):
 
     def stop_cycle(self):
         self.cycle_chk.setChecked(False)
+
+
+class EntryEditorDialog(QDialog):
+    """编辑条目：表格批量编辑当前标签的全部命令，支持清空/导入/导出。"""
+
+    HEADERS = ["HEX", "指令", "描述"]
+
+    def __init__(self, items, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("编辑条目")
+        self.resize(600, 480)
+
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels(self.HEADERS)
+        self.table.verticalHeader().setDefaultSectionSize(28)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        hh = self.table.horizontalHeader()
+        hh.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+        hh.setSectionResizeMode(2, QHeaderView.Stretch)
+        self._fill(items)
+
+        clear_btn = QPushButton("清空")
+        clear_btn.clicked.connect(self._clear)
+        import_btn = QPushButton("导入条目")
+        import_btn.clicked.connect(self._import)
+        export_btn = QPushButton("导出条目")
+        export_btn.clicked.connect(self._export)
+        cancel_btn = QPushButton("取消")
+        cancel_btn.clicked.connect(self.reject)
+        ok_btn = QPushButton("确定")
+        ok_btn.setObjectName("primary")
+        ok_btn.clicked.connect(self.accept)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(clear_btn)
+        btn_row.addWidget(import_btn)
+        btn_row.addWidget(export_btn)
+        btn_row.addStretch()
+        btn_row.addWidget(cancel_btn)
+        btn_row.addWidget(ok_btn)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.table)
+        layout.addLayout(btn_row)
+
+    # ---------- 表格读写 ----------
+
+    def _fill(self, items):
+        self.table.setRowCount(len(items))
+        for r, it in enumerate(items):
+            chk = QTableWidgetItem()
+            chk.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled |
+                         Qt.ItemIsSelectable)
+            chk.setCheckState(Qt.Checked if it.get("hex") else Qt.Unchecked)
+            chk.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(r, 0, chk)
+            self.table.setItem(r, 1, QTableWidgetItem(str(it.get("text", ""))))
+            self.table.setItem(r, 2, QTableWidgetItem(str(it.get("desc", ""))))
+
+    def result_items(self):
+        items = []
+        for r in range(self.table.rowCount()):
+            chk = self.table.item(r, 0)
+            text = self.table.item(r, 1)
+            desc = self.table.item(r, 2)
+            items.append({
+                "hex": chk is not None and chk.checkState() == Qt.Checked,
+                "text": text.text() if text else "",
+                "desc": desc.text() if desc else "",
+            })
+        return items
+
+    def _clear(self):
+        if QMessageBox.question(self, "清空", "确认清空全部条目？") \
+                != QMessageBox.Yes:
+            return
+        n = max(self.table.rowCount(), ENTRIES_PER_PAGE)
+        self._fill([_empty_item() for _ in range(n)])
+
+    def _import(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "导入条目", "", "CSV 文件 (*.csv);;所有文件 (*)")
+        if not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8-sig", newline="") as f:
+                rows = list(csv.reader(f))
+        except OSError as e:
+            QMessageBox.critical(self, "导入失败", str(e))
+            return
+        items = []
+        for row in rows:
+            if not row:
+                continue
+            if row[0].strip().upper() in ("HEX", "16进制"):  # 跳过表头
+                continue
+            hexf = row[0].strip() in ("1", "true", "True", "是", "Y", "y")
+            items.append({"hex": hexf,
+                          "text": row[1] if len(row) > 1 else "",
+                          "desc": row[2] if len(row) > 2 else ""})
+        if items:
+            self._fill(items)
+
+    def _export(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出条目", "xcom_entries.csv", "CSV 文件 (*.csv)")
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8-sig", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(self.HEADERS)
+                for it in self.result_items():
+                    w.writerow([1 if it["hex"] else 0, it["text"], it["desc"]])
+        except OSError as e:
+            QMessageBox.critical(self, "导出失败", str(e))
