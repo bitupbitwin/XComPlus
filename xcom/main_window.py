@@ -182,9 +182,9 @@ class MainWindow(QMainWindow):
         self._sync_port_button()
 
         grid = QGridLayout()
-        grid.setContentsMargins(2, 2, 2, 2)
+        grid.setContentsMargins(5, 8, 5, 6)
         grid.setHorizontalSpacing(3)
-        grid.setVerticalSpacing(3)
+        grid.setVerticalSpacing(5)
         rows = [
             ("串口选择", self.port_combo),
             ("波特率", self.baud_combo),
@@ -226,8 +226,8 @@ class MainWindow(QMainWindow):
         clear_recv_btn.clicked.connect(self.clear_recv)
 
         recv_ctrl = QVBoxLayout()
-        recv_ctrl.setContentsMargins(2, 2, 2, 2)
-        recv_ctrl.setSpacing(2)
+        recv_ctrl.setContentsMargins(5, 8, 5, 6)
+        recv_ctrl.setSpacing(4)
         for w in (self.hex_recv_chk, self.timestamp_chk, self.pause_chk):
             recv_ctrl.addWidget(w)
         recv_btn_row = QHBoxLayout()
@@ -242,18 +242,19 @@ class MainWindow(QMainWindow):
         self.quick_send_edit.setPlaceholderText("输入常用命令")
         quick_send_btn = QPushButton("发送")
         quick_send_btn.setObjectName("primary")
+        quick_send_btn.setFixedWidth(70)
         quick_send_btn.clicked.connect(self.send_quick_command)
         quick_layout = QVBoxLayout()
-        quick_layout.setContentsMargins(2, 2, 2, 2)
-        quick_layout.setSpacing(2)
+        quick_layout.setContentsMargins(5, 8, 5, 6)
+        quick_layout.setSpacing(4)
         quick_layout.addWidget(self.quick_send_edit)
-        quick_layout.addWidget(quick_send_btn)
+        quick_layout.addWidget(quick_send_btn, alignment=Qt.AlignHCenter)
         quick_box = QGroupBox("高频发送")
         quick_box.setLayout(quick_layout)
 
         right = QVBoxLayout()
-        right.setContentsMargins(0, 0, 0, 0)
-        right.setSpacing(2)
+        right.setContentsMargins(3, 4, 3, 4)
+        right.setSpacing(6)
         right.addWidget(settings_box)
         right.addWidget(recv_box)
         right.addWidget(self.multi_page.controls_box)
